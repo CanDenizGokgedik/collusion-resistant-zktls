@@ -436,7 +436,34 @@ Config       RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
 50-of-99       34384            16          65              0       34465
 ```
 
-**Key observation:** The Attest column stays constant at **~16–17 ms** across all configurations — independent of n. This directly measures O(1) prover complexity. RC (DKG) grows O(n²) and dominates; in production, DKG runs once and this cost is not repeated per attestation.
+**Key observation — Mode 1:** The Attest column stays constant at **~16–17 ms** across all configurations — independent of n. This directly measures O(1) prover complexity. RC (DKG) grows O(n²) and dominates; in production, DKG runs once and this cost is not repeated per attestation.
+
+### Full pipeline — real co-SNARK Mode 2 (full TLS-PRF)
+
+```bash
+cargo run --package tls-attestation-bench --bin bench_full_cosnark_mode2 --release
+```
+
+Same pipeline with Groth16 Mode 2 (~1.9M R1CS). CRS setup is done once (~64s).
+
+Sample output (Apple M1, release build):
+
+```
+Groth16 CRS setup (Mode 2, ~1.9M R1CS)... 63,752ms  (one-time)
+
+Config       RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
+───────────────────────────────────────────────────────────────────────────
+3-of-5             9        26,494           1              0       26,504
+5-of-9            45        23,650           1              0       23,696
+7-of-13          102        23,500           3              0       23,605
+10-of-19         533        25,654           4              0       26,191
+15-of-29         955        22,475           8              0       23,438
+20-of-39        2226        23,944          13              0       26,183
+30-of-59        7587        22,998          26              0       30,611
+50-of-99       34358        24,185          67              0       58,610
+```
+
+**Key observation — Mode 2:** Attest stays constant at **~22,000–26,000 ms** across all configurations — O(1) prover complexity holds for the full TLS-PRF circuit too. Paper reports 4,700 ms using gnark/BLS12-381 on M3; our 23,000 ms reflects arkworks/BN254 on M1 (~4.5× slower). Verify remains 1 ms regardless of mode.
 
 ### co-SNARK + dx-DCTLS overhead (§IX)
 

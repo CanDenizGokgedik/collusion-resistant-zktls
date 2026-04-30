@@ -3,12 +3,7 @@
 > **Prototype implementation** of the protocol described in:
 >
 > **"Collusion-Minimized TLS Attestation Protocol for Decentralized Applications"**
-> Uğur Şen, Murat Osmanoğlu, Oğuz Yayla, Ali Aydın Selçuk, Ali Doğanaksoy
 > *Cryptology ePrint Archive, Paper 2026/277* — https://eprint.iacr.org/2026/277
->
-> Per §IX of the paper: *"We do not provide a full end-to-end implementation of
-> dx-DCTLS. Instead, we measure the additional overhead that dx-DCTLS would
-> introduce by calculating its cost relative to DECO."*
 >
 > This repository implements the **DVRF-then-Sign component** (RC Phase + Signing
 > Phase) in full, plus the structural scaffolding for the dx-DCTLS Attestation

@@ -82,7 +82,7 @@ The key advantage over DECO-DON (naive decentralization): prover complexity drop
 ## Architecture
 
 ```
-tls/
+collusion-resistant-zktls/
 ├── crates/
 │   ├── core/           # Domain types: VerifierId, DigestBytes, Epoch, QuorumSpec
 │   ├── crypto/         # FROST (ed25519+secp256k1), DVRF, DKG
@@ -94,16 +94,13 @@ tls/
 │   ├── bench/          # DVRF-then-Sign benchmarks (paper §IX Fig. 9–12)
 │   └── testing/        # Integration test helpers, mock TLS sessions
 │
-├── contracts/
-│   ├── src/
-│   │   ├── FrostVerifier.sol   # secp256k1 Schnorr SC.Verify (ecrecover trick)
-│   │   └── DctlsVerifier.sol   # Groth16 BN254 ZKP.Verify (EIP-197)
-│   └── test/
-│       ├── FrostVerifier.t.sol
-│       └── DctlsVerifier.t.sol
-│
-└── docs/
-    └── tls.pdf                 # Paper (ePrint 2026/277)
+└── contracts/
+    ├── src/
+    │   ├── FrostVerifier.sol   # secp256k1 Schnorr SC.Verify (ecrecover trick)
+    │   └── DctlsVerifier.sol   # Groth16 BN254 ZKP.Verify (EIP-197)
+    └── test/
+        ├── FrostVerifier.t.sol
+        └── DctlsVerifier.t.sol
 ```
 
 ---

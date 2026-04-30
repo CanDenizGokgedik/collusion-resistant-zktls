@@ -2,12 +2,13 @@
 
 > **Reference implementation** of the protocol described in:
 >
-> **"dx-DCTLS: Decentralized Cross-TLS Attestation via Threshold Signatures and Zero-Knowledge Proofs"**
+> **"Collusion-Minimized TLS Attestation Protocol for Decentralized Applications"**
+> *Cryptology ePrint Archive, Paper 2026/277* — https://eprint.iacr.org/2026/277
 >
 > This codebase implements every protocol component from the paper end-to-end:
-> Distributed Verifiable Random Function (DVRF), FROST threshold Schnorr signing,
-> Groth16 zero-knowledge proofs, on-chain EVM verification, and a TCP-based
-> auxiliary-node network.
+> the Π_coll-min framework, dx-DCTLS exportable attestation, Distributed Verifiable
+> Random Function (DVRF), FROST threshold Schnorr signing, Groth16 zero-knowledge
+> proofs, on-chain EVM verification, and a TCP-based auxiliary-node network.
 
 ---
 
@@ -37,8 +38,8 @@ Existing schemes (DECO, TLSNotary) rely on a single trusted notary. **dx-DCTLS**
 | Property | Mechanism |
 |----------|-----------|
 | **Decentralization** | t-of-n FROST threshold signing (paper §VIII.B) |
-| **Randomness binding** | secp256k1 DVRF ties attestation to an unpredictable per-session nonce (paper §VII) |
-| **Privacy** | Groth16 ZKP proves K_MAC binding without revealing the TLS master secret (paper §III.B) |
+| **Randomness binding** | secp256k1 DVRF ties attestation to an unpredictable per-session nonce (paper §III, §V) |
+| **Privacy** | co-SNARK/Groth16 ZKP proves K_MAC binding without revealing the TLS master secret (paper §VIII.C eq. 2) |
 | **On-chain verifiability** | Single EVM transaction verifies FROST σ + Groth16 π (paper §IX) |
 | **TLS 1.2 + 1.3** | DECO-based (§VIII.C) and Distefano v2PC-based (§VIII.C eq. 3) variants |
 
@@ -59,18 +60,18 @@ The full attestation runs in four sequential phases (paper §VIII, Fig. 8):
    │        │  DVRF.Combine → rand ◄─────────────────── │
    │        └──────────────────────────────────────────  │
    │                         │                           │
-   │        ┌── Phase 2: HSP (HMAC Setup Protocol) ─────┤
-   │        │  Prover runs TLS session with server       │
+   │        ┌── Phase 2: HSP (Handshake SubProtocol) ──────┤
+   │        │  3-party TLS handshake: S + P + Vcoord     │
    │        │  2PC MAC key split: K_MAC = K^P ⊕ K^V     │
-   │        │  ZKP: π_HSP = Groth16(K_MAC, rand)        │
+   │        │  co-SNARK: π_HSP proves handshake w/ rand  │
    │        └──────────────────────────────────────────  │
    │                         │                           │
    │        ┌── Phase 3: QP (Query Protocol) ──────────  │
-   │        │  Prover sends TLS query over real session  │
-   │        │  HMAC-authenticated transcript recorded    │
+   │        │  P + Vcoord jointly construct query (2PC)  │
+   │        │  P gets (Q,R), Vcoord gets (Q̂,R̂) commits  │
    │        └──────────────────────────────────────────  │
    │                         │                           │
-   │        ┌── Phase 4: PGP (Post-Query / Signature) ──┤
+   │        ┌── Phase 4: PGP (Proof Generation Protocol) ┤
    │        │  FROST Round 1: commit (nonce) × t ─────► │
    │        │  FROST Round 2: share  × t        ─────► │
    │        │  Aggregate → σ = (R, s)                   │
@@ -154,7 +155,7 @@ let keys = frost_trusted_dealer_keygen(&verifier_ids, threshold)?;
 use tls_attestation_crypto::dkg::run_dkg_ceremony;
 ```
 
-**DVRF (paper §VII)**
+**DVRF (paper §III Preliminaries, §V RC Phase)**
 
 ```rust
 use tls_attestation_crypto::dvrf_secp256k1::{Secp256k1Dvrf, Secp256k1DvrfInput};
@@ -170,10 +171,10 @@ Groth16 zero-knowledge backend on BN254 (arkworks 0.4).
 
 | Module | Circuit | Paper ref |
 |--------|---------|-----------|
-| `co_snark` | HSP proof: K_MAC × rand_binding | §III.B eq. 2 |
-| `tls_prf_circuit` | TLS-PRF R1CS (~37 k constraints/block) | §VIII.C |
+| `co_snark` | HSP proof: co-SNARK.Execute({K^P_MAC, K^V_MAC}, Zp) | §VIII.C eq. 2 |
+| `tls_prf_circuit` | TLS-PRF R1CS (~37 k constraints/block) | §IX ref [19] |
 | `hmac_sha256_gadget` | HMAC-SHA256 gadget (~74 k constraints/call) | §IX ref [19] |
-| `tls_session_binding` | Session secret θs binding | §V PGP Proof |
+| `tls_session_binding` | ZKP.Prove(x,w): x=(Q,R,θs), w=(Q̂,R̂,spv,b) | §VIII.C PGP |
 | `vk_export` | arkworks BN254 → Solidity hex | §IX |
 
 ```rust
@@ -184,7 +185,7 @@ let proof = co_snark_execute(&crs, witness)?;
 assert!(co_snark_verify(&crs.vk, &public_inputs, &proof)?);
 ```
 
-> **Note:** The current implementation runs Groth16 with a **single coordinator-held witness**. Full co-SNARK (distributed witness, no single party sees K_MAC) requires MPC-based R1CS extension and is left as future work. See §III.B and the [Security Notes](#security-notes) section.
+> **Note:** The current implementation runs Groth16 with a **single coordinator-held witness**. Full co-SNARK (distributed witness, no single party sees K_MAC) requires MPC-based R1CS extension and is left as future work. See §VIII.C eq. 2 and [32] (Özdemir & Boneh, USENIX Security 2022) and the [Security Notes](#security-notes) section.
 
 ### `tls-attestation-attestation`
 
@@ -621,9 +622,9 @@ All items named `Prototype*` (`PrototypeDvrf`, `PrototypeThresholdSigner`, `Prot
 
 ### Honest-Coordinator Assumption
 
-The current ZK implementation runs Groth16 with the coordinator holding the full witness (K_MAC). This implements the *honest-but-curious* coordinator model from paper §IV.C.
+The current ZK implementation runs Groth16 with the coordinator holding the full witness (K_MAC). The paper describes a setting where coordinator (Vcoord) is honest-but-curious (paper §IV, Problem Formulation).
 
-A fully trustless implementation requires **collaborative zk-SNARKs** where each auxiliary verifier contributes its witness share `wᵢ` without revealing it to the coordinator (paper §III.B). This is left as future work and would require MPC-based R1CS witness extension (e.g., Pianist or a port of Alex Özdemir's collaborative-zksnark to arkworks 0.4 + BN254).
+A fully trustless implementation requires **collaborative zk-SNARKs** where each auxiliary verifier contributes its witness share `wᵢ` without revealing it to the coordinator (paper §VIII.C eq. 2, and ref [32]). This is left as future work and would require MPC-based R1CS witness extension (e.g., Pianist or a port of Alex Özdemir's collaborative-zksnark to arkworks 0.4 + BN254).
 
 ### BN254 Pairing Trivial Acceptance
 

@@ -411,6 +411,33 @@ Config      RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
 
 > Attest and OnChain columns show 0 ms because the benchmark uses stub co-SNARK and mock TLS session (no real Groth16 proof). See `bench_dctls` for co-SNARK timing.
 
+### Full pipeline — real co-SNARK across t-of-n configurations
+
+```bash
+cargo run --package tls-attestation-bench --bin bench_full_cosnark --release
+```
+
+RC Phase → dx-DCTLS (real Groth16 Mode 1) → FROST Sign → on-chain ABI. Groth16 CRS is set up once and reused across all configurations.
+
+Sample output (Apple M1, release build):
+
+```
+Groth16 CRS setup (Mode 1, ~769 R1CS)... 61ms
+
+Config       RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
+───────────────────────────────────────────────────────────────────────────
+3-of-5             8            16           0              0          24
+5-of-9            37            17           1              0          55
+7-of-13           99            17           2              0         118
+10-of-19         292            17           4              0         313
+15-of-29         930            16           7              0         953
+20-of-39        2185            16          12              0        2213
+30-of-59        7499            16          25              0        7540
+50-of-99       34384            16          65              0       34465
+```
+
+**Key observation:** Attest sütunu tüm konfigürasyonlarda sabit **~16–17 ms** — n'den bağımsız. Bu O(1) prover complexity'yi doğrudan ölçüyor. RC (DKG) O(n²) büyüyor ve dominant oluyor; gerçek üretimde DKG bir kere yapılır ve bu maliyet tekrarlanmaz.
+
 ### co-SNARK + dx-DCTLS overhead (§IX)
 
 ```bash

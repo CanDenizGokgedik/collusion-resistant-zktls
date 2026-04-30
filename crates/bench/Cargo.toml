@@ -26,6 +26,10 @@ name = "bench_wan_real"
 path = "src/bin/bench_wan_real.rs"
 required-features = ["tcp"]
 
+[[bin]]
+name = "bench_full_cosnark"
+path = "src/bin/bench_full_cosnark.rs"
+
 [features]
 tcp = [
     "tls-attestation-node/frost",

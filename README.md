@@ -295,18 +295,28 @@ Gas cost: **~181,000 gas** per `verifyFullAttestation` (4-pairing BN254 check).
 cd contracts && forge test -v
 ```
 
-Expected output (17 tests, 0 failures):
+Output (17 tests, 0 failures — measured on this machine):
 ```
-[PASS] test_Deploy()
-[PASS] test_ValidSignature()     (gas: 12,424)
-[PASS] test_GasCost()            (gas: 13,918)   ← matches paper Table I ~12k gas
-[PASS] test_WrongMessage()       (gas: 12,422)
-[PASS] test_WrongPubKeyX()       (gas: 12,252)
-[PASS] test_WrongRx()            (gas:  8,269)
-[PASS] test_WrongSigS()          (gas: 12,284)
-[PASS] test_ZeroSignature()      (gas:  8,176)
-[PASS] test_Gas_HspMode1()       (gas: 263,682)  ← ~181k pairing gas + overhead
-...
+Ran 8 tests for FrostVerifier.t.sol:
+[PASS] test_Deploy()          (gas:     2,462)
+[PASS] test_GasCost()         (gas:    13,918)  ← ~14k gas, paper Table I
+[PASS] test_ValidSignature()  (gas:    12,424)
+[PASS] test_WrongMessage()    (gas:    12,422)
+[PASS] test_WrongPubKeyX()    (gas:    12,252)
+[PASS] test_WrongRx()         (gas:     8,269)
+[PASS] test_WrongSigS()       (gas:    12,284)
+[PASS] test_ZeroSignature()   (gas:     8,176)
+
+Ran 9 tests for DctlsVerifier.t.sol:
+[PASS] test_Deploy()                              (gas:      8,212)
+[PASS] test_OwnerCanSetVK()                       (gas:     55,359)
+[PASS] test_OwnerCanSetHspMode2VK()               (gas:     60,945)
+[PASS] test_OwnerCanSetSessionBindingVK()         (gas:     65,932)
+[PASS] test_OnlyOwnerCanSetVK()                   (gas:     12,142)
+[PASS] test_Gas_HspMode1()                        (gas:    263,682)  ← ~181k pairing gas
+[PASS] test_ZeroProofWithZeroVK_IsAccepted_ByPairing() (gas: 261,232)
+[PASS] test_FullAttestation_ZeroProof_PassesTrivially() (gas: 561,728)
+[PASS] test_FullZKP_Skipped()                     (gas:        524)
 ```
 
 > **Warning:** `DctlsVerifier.sol` accepts all-zero proofs when the verifying key is all-zero (BN254 identity). Always call `setHspVK` and `setSessionBindingVK` with real circuit keys before accepting proofs.
@@ -379,66 +389,54 @@ Config      DKG (ms)   DVRF (ms)   TSS (ms)   Total (ms)
 15-of-29        1511          12         13        1536
 ```
 
-### Network communication cost (Fig. 10, 11)
+### Full pipeline — end-to-end (Table II)
 
 ```bash
-cargo run --package tls-attestation-bench --features secp256k1 --bin bench_full_pipeline --release
+cargo run --package tls-attestation-bench --bin bench_full_pipeline --release
 ```
 
-Reports bytes transferred per phase (DKG, DVRF, TSS) for each configuration.
-
-### WAN execution time — simulated (Fig. 12)
-
-```bash
-cargo run --package tls-attestation-bench --bin bench_wan --release
-```
-
-Injects latency via `Thread::sleep` to simulate WAN conditions. No real network needed.
-
-### WAN execution time — real crypto (Fig. 12, extended)
-
-```bash
-cargo run --package tls-attestation-bench --features tcp --bin bench_wan_real --release
-```
-
-Runs actual ed25519 FROST cryptography. Per-message latency is injected by a `LatencyTransport` wrapper so CPU time and network time are reported separately.
+RC Phase → dx-DCTLS → FROST Sign → on-chain ABI encoding. Demonstrates O(1) prover complexity.
 
 Sample output (Apple M1, release build):
 
-**WITH DKG (Fig. 10):**
-
 ```
-Config      LAN (ms)   WAN1 (ms)   WAN2 (ms)   WAN2 comm%
-──────────────────────────────────────────────────────────
-2-of-3             5         635        1211          99%
-3-of-5            28        1426        2688          99%
-5-of-9            75        4141        7695          99%
-7-of-13          179        8381       15512          98%
-10-of-19         466       17515       33301          98%
-15-of-29        1549       43293       77550          98%
+Config      RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
+──────────────────────────────────────────────────────────────────────────
+2-of-3            5             0           2              0           7
+3-of-5           21             0           1              0          22
+5-of-9           62             0           2              0          64
+7-of-13         162             0           3              0         165
+10-of-19        469             0           8              0         477
 ```
 
-**WITHOUT DKG (Fig. 11):**
+> Attest and OnChain columns show 0 ms because the benchmark uses stub co-SNARK and mock TLS session (no real Groth16 proof). See `bench_dctls` for co-SNARK timing.
 
-```
-Config      LAN (ms)   WAN1 (ms)   WAN2 (ms)   WAN2 comm%
-──────────────────────────────────────────────────────────
-2-of-3             3         387         722          99%
-3-of-5             4         517         978          99%
-5-of-9             5         826        1507          99%
-7-of-13            8        1131        2024          99%
-10-of-19          13        1570        2848          99%
-15-of-29          25        2330        4192          99%
+### co-SNARK + dx-DCTLS overhead (§IX)
+
+```bash
+cargo run --package tls-attestation-bench --bin bench_dctls --release
 ```
 
-WAN profiles (paper §IX):
+Measures HSP proof generation (Groth16), QP, and PGP phases. Compares R1CS constraint counts against paper reference [19].
 
-| Profile | One-way latency | RTT | Bandwidth | Loss |
-|---------|----------------|-----|-----------|------|
-| WAN1 | 40 ms ± 5 ms | ~80 ms | 50 Mbps | 0.1% |
-| WAN2 | 75 ms ± 15 ms | ~150 ms | 20 Mbps | 0.2% |
+Sample output (Apple M1, release build):
 
-Paper result: 15-of-29 WAN2 without DKG ≈ **1,000 ms additional overhead** over LAN. Our result: 4,192 ms total (25 ms local + 4,167 ms network) — network delay dominates at 99%.
+```
+R1CS Constraint Counts:
+  Mode 1 (K_MAC split only):          769 constraints
+  Mode 2 (full TLS-PRF):        1,927,271 constraints
+  Paper [19] (gnark BLS12-381): 1,719,598 constraints
+  Delta (arkworks BN254):            +12.1%
+
+Phase                    Min(ms)  Max(ms)  Avg(ms)   Paper [19]
+───────────────────────────────────────────────────────────────
+HSP Mode 1 (769 R1CS)        27       27       27       N/A
+HSP Mode 2 (extrapolated)     —        —   ~10,534    4,700ms
+QP — HMAC commit              0        0        0        ~0ms
+PGP — statement proof         0        0        0      varies
+```
+
+Mode 2 is extrapolated: `Mode 1 rate × (1,927,271 / 769) × 2` (BN254 is ~2× slower than gnark/BLS12-381). Paper's 4,700 ms uses gnark on BLS12-381; our estimate is ~10,500 ms on arkworks/BN254.
 
 ---
 

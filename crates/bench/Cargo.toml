@@ -30,6 +30,10 @@ required-features = ["tcp"]
 name = "bench_full_cosnark"
 path = "src/bin/bench_full_cosnark.rs"
 
+[[bin]]
+name = "bench_cosnark_mode2"
+path = "src/bin/bench_cosnark_mode2.rs"
+
 [features]
 tcp = [
     "tls-attestation-node/frost",

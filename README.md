@@ -436,7 +436,7 @@ Config       RC (ms)   Attest (ms)   Sign (ms)   OnChain (ms)   Total (ms)
 50-of-99       34384            16          65              0       34465
 ```
 
-**Key observation:** Attest sütunu tüm konfigürasyonlarda sabit **~16–17 ms** — n'den bağımsız. Bu O(1) prover complexity'yi doğrudan ölçüyor. RC (DKG) O(n²) büyüyor ve dominant oluyor; gerçek üretimde DKG bir kere yapılır ve bu maliyet tekrarlanmaz.
+**Key observation:** The Attest column stays constant at **~16–17 ms** across all configurations — independent of n. This directly measures O(1) prover complexity. RC (DKG) grows O(n²) and dominates; in production, DKG runs once and this cost is not repeated per attestation.
 
 ### co-SNARK + dx-DCTLS overhead (§IX)
 
@@ -451,19 +451,21 @@ Sample output (Apple M1, release build):
 ```
 R1CS Constraint Counts:
   Mode 1 (K_MAC split only):          769 constraints
-  Mode 2 (full TLS-PRF):        1,927,271 constraints
-  Paper [19] (gnark BLS12-381): 1,719,598 constraints
-  Delta (arkworks BN254):            +12.1%
+  Mode 2 (full TLS-PRF, BN254):  1,927,271 constraints
+  Paper target (gnark/BLS12-381): 1,719,598 constraints
+  Delta:                              +12.1%
 
-Phase                    Min(ms)  Max(ms)  Avg(ms)   Paper [19]
-───────────────────────────────────────────────────────────────
-HSP Mode 1 (769 R1CS)        27       27       27       N/A
-HSP Mode 2 (extrapolated)     —        —   ~10,534    4,700ms
-QP — HMAC commit              0        0        0        ~0ms
-PGP — statement proof         0        0        0      varies
+  CRS setup (Mode 2, ~1.9M R1CS)... 59,040ms  (one-time)
+
+  Phase              Min(ms)   Max(ms)   Avg(ms)   Paper [19]
+  ──────────────────────────────────────────────────────────────
+  Prove  (Mode 1)       ~16       ~16       ~16       N/A
+  Prove  (Mode 2)     20872     21660     21305   4,700ms (gnark)
+  Verify (Mode 2)         1         2         1       ~5ms
+  Proof size:         128 bytes
 ```
 
-Mode 2 is extrapolated: `Mode 1 rate × (1,927,271 / 769) × 2` (BN254 is ~2× slower than gnark/BLS12-381). Paper's 4,700 ms uses gnark on BLS12-381; our estimate is ~10,500 ms on arkworks/BN254.
+Paper's 4,700 ms uses gnark/BLS12-381 on M3. Our 21,305 ms is ~4.5× slower — arkworks/BN254 is inherently slower than gnark, and M1 is slower than M3. Verify is only 1 ms regardless of proof complexity, so aux verifier cost is negligible.
 
 ---
 

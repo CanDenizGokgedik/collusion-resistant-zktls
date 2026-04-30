@@ -570,7 +570,3 @@ where each party holds their witness independently. This implementation instead 
 `FrostVerifier.sol` uses `keccak256(R_x ‖ pk_x ‖ msg) mod N` — not the RFC 9591 domain-separated SHA-512 challenge. Test vectors from `gen-test-vectors` match this contract exactly.
 
 ---
-
-## License
-
-See `LICENSE` file.

@@ -1,0 +1,6 @@
+docs/
+target/
+
+# macOS metadata files
+.DS_Store
+._*

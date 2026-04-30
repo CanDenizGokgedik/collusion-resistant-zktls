@@ -360,10 +360,24 @@ All benchmarks measure the **DVRF-then-Sign** component (paper §IX). This is th
 ### LAN: DVRF + TSS execution time (Fig. 9)
 
 ```bash
-cargo run --package tls-attestation-bench --features secp256k1 --bin bench_dvrf_tss --release
+cargo run --package tls-attestation-bench --bin bench_dvrf_tss --release
 ```
 
 Measures DVRF (PartialEval + Combine) and FROST signing (Round1 + Round2 + Aggregate) across t-of-n configurations. Corresponds to Fig. 9 in the paper.
+
+Sample output (Apple M1, release build):
+
+```
+Config      DKG (ms)   DVRF (ms)   TSS (ms)   Total (ms)
+─────────────────────────────────────────────────────────
+2-of-3             3           1          1           5
+3-of-5            13           1          1          15
+4-of-7            30           1          2          33
+5-of-9            60           2          2          64
+7-of-13          159           4          4         167
+10-of-19         459           6          7         472
+15-of-29        1511          12         13        1536
+```
 
 ### Network communication cost (Fig. 10, 11)
 
@@ -389,16 +403,32 @@ cargo run --package tls-attestation-bench --features tcp --bin bench_wan_real --
 
 Runs actual ed25519 FROST cryptography. Per-message latency is injected by a `LatencyTransport` wrapper so CPU time and network time are reported separately.
 
-Sample output (Apple M3, debug build):
+Sample output (Apple M1, release build):
+
+**WITH DKG (Fig. 10):**
 
 ```
-Config        LAN(ms)   WAN1(ms)   WAN1-net   WAN2(ms)   WAN2-net
-──────────────────────────────────────────────────────────────────
-2-of-3            13ms       391ms       321ms       652ms       581ms
-3-of-5            24ms       591ms       482ms      1036ms       906ms
-5-of-9            45ms      1034ms       794ms      1695ms      1489ms
-7-of-13           78ms      1449ms      1122ms      2437ms      2114ms
-10-of-19         157ms      2141ms      1602ms      3475ms      2963ms
+Config      LAN (ms)   WAN1 (ms)   WAN2 (ms)   WAN2 comm%
+──────────────────────────────────────────────────────────
+2-of-3             5         635        1211          99%
+3-of-5            28        1426        2688          99%
+5-of-9            75        4141        7695          99%
+7-of-13          179        8381       15512          98%
+10-of-19         466       17515       33301          98%
+15-of-29        1549       43293       77550          98%
+```
+
+**WITHOUT DKG (Fig. 11):**
+
+```
+Config      LAN (ms)   WAN1 (ms)   WAN2 (ms)   WAN2 comm%
+──────────────────────────────────────────────────────────
+2-of-3             3         387         722          99%
+3-of-5             4         517         978          99%
+5-of-9             5         826        1507          99%
+7-of-13            8        1131        2024          99%
+10-of-19          13        1570        2848          99%
+15-of-29          25        2330        4192          99%
 ```
 
 WAN profiles (paper §IX):
@@ -408,7 +438,7 @@ WAN profiles (paper §IX):
 | WAN1 | 40 ms ± 5 ms | ~80 ms | 50 Mbps | 0.1% |
 | WAN2 | 75 ms ± 15 ms | ~150 ms | 20 Mbps | 0.2% |
 
-Paper result: 15-of-29 WAN2 without DKG ≈ **1,000 ms additional overhead** over LAN.
+Paper result: 15-of-29 WAN2 without DKG ≈ **1,000 ms additional overhead** over LAN. Our result: 4,192 ms total (25 ms local + 4,167 ms network) — network delay dominates at 99%.
 
 ---
 

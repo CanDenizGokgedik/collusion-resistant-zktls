@@ -14,16 +14,15 @@
 ## Table of Contents
 
 1. [What is Π_coll-min?](#what-is-coll-min)
-2. [What is Implemented?](#what-is-implemented)
-3. [Protocol Overview](#protocol-overview)
-4. [Architecture](#architecture)
-5. [Crate Reference](#crate-reference)
-6. [Smart Contracts](#smart-contracts)
-7. [Binaries](#binaries)
-8. [Benchmarks](#benchmarks)
-9. [Building](#building)
-10. [Running a Local Network](#running-a-local-network)
-11. [Security Notes](#security-notes)
+2. [Protocol Overview](#protocol-overview)
+3. [Architecture](#architecture)
+4. [Crate Reference](#crate-reference)
+5. [Smart Contracts](#smart-contracts)
+6. [Binaries](#binaries)
+7. [Benchmarks](#benchmarks)
+8. [Building](#building)
+9. [Running a Local Network](#running-a-local-network)
+10. [Security Notes](#security-notes)
 
 ---
 
@@ -40,23 +39,6 @@ Existing DCTLS schemes (DECO, TLSNotary, Distefano) rely on a **single designate
 3. **Signing Phase** — TSS: auxiliary verifiers check the proofs and, if valid, jointly produce a FROST threshold Schnorr signature over the attested statement.
 
 The key advantage over DECO-DON (naive decentralization): prover complexity drops from **O(n) to O(1)** — one TLS session regardless of verifier set size.
-
----
-
-## What is Implemented?
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **DVRF RC Phase** (DKG + PartialEval + Combine + Verify) | ✅ Full | secp256k1, threshold, public verifiability |
-| **FROST TSS** (Round 1 + Round 2 + Aggregate) | ✅ Full | RFC 9591, ed25519 and secp256k1 |
-| **TCP aux-node network** | ✅ Full | InProcess + TCP + auth + mTLS transports |
-| **FrostVerifier.sol** (on-chain SC.Verify) | ✅ Full | ecrecover trick, ~14k gas |
-| **DctlsVerifier.sol** (on-chain Groth16) | ✅ Full | BN254 EIP-197, ~181k gas |
-| **DVRF-then-Sign benchmarks** (Fig. 9–12) | ✅ Full | LAN + WAN1 + WAN2 profiles |
-| **dx-DCTLS DECO structure** | ⚠️ Prototype | Structural mapping correct; real TLS session uses mock |
-| **dx-DCTLS Distefano structure** | ⚠️ Prototype | v2PC abstraction present; π_2PC is a placeholder |
-| **co-SNARK (π_HSP)** | ⚠️ Prototype | Groth16 circuit correct; coordinator sees full witness (not distributed) |
-| **Full end-to-end dx-DCTLS** | ❌ Not implemented | Paper explicitly defers this to future work |
 
 ---
 

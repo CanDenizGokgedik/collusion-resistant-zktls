@@ -375,19 +375,22 @@ cargo run --package tls-attestation-bench --bin bench_dvrf_tss --release
 
 Measures DVRF (PartialEval + Combine) and FROST signing (Round1 + Round2 + Aggregate) across t-of-n configurations. Corresponds to Fig. 9 in the paper.
 
-Sample output (Apple M1, release build):
+Sample output (Apple M1, release build — paper Fig. 9 exact configs):
 
 ```
-Config      DKG (ms)   DVRF (ms)   TSS (ms)   Total (ms)
-─────────────────────────────────────────────────────────
-2-of-3             3           1          1           5
-3-of-5            13           1          1          15
-4-of-7            30           1          2          33
-5-of-9            60           2          2          64
-7-of-13          159           4          4         167
-10-of-19         459           6          7         472
-15-of-29        1511          12         13        1536
+Config       DKG (ms)  DVRF (ms)   TSS (ms)  w/ DKG (ms)  w/o DKG (ms)
+────────────────────────────────────────────────────────────────────────
+3-of-5             12         1          1           14              2
+5-of-9             37         1          1           39              2
+7-of-13            98         2          2          102              4
+10-of-19          276         4          4          284              8
+15-of-29          922         7          7          936             14
+20-of-39         2159        12         12         2183             24
+30-of-59         7232        25         24         7281             49
+50-of-99        34111        64         64        34239            128
 ```
+
+`w/ DKG` = paper Fig. 9 orange line.  `w/o DKG` = paper Fig. 9 blue line (production path — DKG runs once at network setup).
 
 ### Full pipeline — end-to-end (Table II)
 

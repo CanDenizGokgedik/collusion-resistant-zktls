@@ -351,6 +351,11 @@ fn distributed_restart_between_rounds_fails_safely() {
         signer_set: signer_set.clone(),
         round_expires_at: expires_at,
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     // Round-1 completes on the original node — nonces are cached.
@@ -412,6 +417,11 @@ fn distributed_duplicate_round1_from_same_node_fails() {
         signer_set: vec![verifier_id],
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     node.frost_round1(&req, now).expect("first round-1 should succeed");
@@ -457,6 +467,11 @@ fn distributed_signer_set_drift_between_rounds_fails() {
         signer_set: original_signer_set.clone(),
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     node.frost_round1(&r1_req, now).expect("round-1 should succeed");
@@ -507,6 +522,11 @@ fn distributed_node_not_in_signer_set_rejects_round1() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node.frost_round1(&req, now);
@@ -545,6 +565,11 @@ fn distributed_stale_round1_request_rejected() {
         signer_set: vec![verifier_id],
         round_expires_at: expired_at,
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node.frost_round1(&req, now);
@@ -581,6 +606,11 @@ fn distributed_tampered_signed_digest_rejected_in_round1() {
         signer_set: vec![verifier_id],
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node.frost_round1(&req, now);
@@ -628,6 +658,11 @@ fn distributed_duplicate_round2_fails_nonces_consumed() {
         signer_set: signer_set.clone(),
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let r0_resp = node0.frost_round1(&r1_req, now).unwrap();

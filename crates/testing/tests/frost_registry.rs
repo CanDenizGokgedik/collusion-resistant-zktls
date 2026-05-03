@@ -126,6 +126,11 @@ fn registry_gated_round1_accepts_active_participant() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -172,6 +177,11 @@ fn registry_gated_round1_rejects_revoked_signer() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: new_epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -219,6 +229,11 @@ fn registry_gated_round1_rejects_retired_signer() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: new_epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -252,6 +267,11 @@ fn registry_gated_round1_rejects_unknown_signer() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -287,6 +307,11 @@ fn registry_gated_round1_rejects_stale_epoch() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: stale_epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -321,6 +346,11 @@ fn registry_gated_round1_rejects_future_epoch() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: future_epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node0.frost_round1(&req, now);
@@ -360,6 +390,11 @@ fn registry_gated_round1_genesis_epoch_bypasses_checks() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch::GENESIS,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     // Even though the node holds a registry at epoch 5, GENESIS bypasses checks.
@@ -390,6 +425,11 @@ fn no_registry_node_accepts_any_epoch() {
         signer_set: vec![vid],
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: RegistryEpoch(42),
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     let result = node.frost_round1(&req, now);
@@ -679,6 +719,11 @@ fn per_node_check_fires_independently_of_coordinator() {
         signer_set,
         round_expires_at: UnixTimestamp(now.0 + 3600),
         registry_epoch: wrong_epoch,
+        hsp_proof_bytes: vec![],
+        hsp_pvk_bytes: vec![],
+        dctls_evidence_bytes: vec![],
+        rand_value_bytes: vec![],
+        server_cert_hash_bytes: vec![],
     };
 
     // The aux node should reject this regardless of what the coordinator claims.

@@ -57,14 +57,15 @@ fn make_session(n: usize, threshold: usize) -> (SessionContext, Vec<VerifierId>)
         .map(|b| VerifierId::from_bytes([b; 32]))
         .collect();
     let quorum = QuorumSpec::new(vids.clone(), threshold).unwrap();
+    let now = UnixTimestamp::now();
     let session = SessionContext::new(
         SessionId::from_bytes([0xAA; 16]),
         ProverId::from_bytes([0xBB; 32]),
         vids[0].clone(),
         quorum,
         Epoch::GENESIS,
-        UnixTimestamp(1_000_000),
-        UnixTimestamp(1_002_000),
+        now,
+        UnixTimestamp(now.0 + 3600),
         Nonce::from_bytes([0xCC; 32]),
     );
     (session, vids)
@@ -200,7 +201,7 @@ fn phase3_full_pipeline_2_of_3_complete_attestation() {
         &server_cert_hash,
         query,
         response,
-        UnixTimestamp(1_001_000),
+        UnixTimestamp::now(),
     );
     assert!(
         result.approved,
@@ -324,7 +325,7 @@ fn phase4_on_chain_attestation_abi_encode_decode_roundtrip() {
 
     // ABI encode → decode roundtrip.
     let encoded = onchain.abi_encode();
-    assert_eq!(encoded.len(), 256, "ABI encoding must be 256 bytes");
+    assert_eq!(encoded.len(), 288, "ABI encoding must be 288 bytes");
     let decoded = OnChainAttestation::abi_decode(&encoded).expect("abi_decode");
     assert_eq!(decoded.statement_digest, onchain.statement_digest);
     assert_eq!(decoded.dvrf_value, onchain.dvrf_value);
@@ -377,7 +378,7 @@ fn phase5_check_full_rejects_wrong_dvrf_value_in_package() {
     let aux_verifier = AuxiliaryVerifier::new(vids[0].clone(), policy);
     let result = aux_verifier.check_full(
         &package, &statement, &dctls_evidence, &dvrf_output, &alpha,
-        &server_cert_hash, b"GET /", b"OK", UnixTimestamp(1_001_000),
+        &server_cert_hash, b"GET /", b"OK", UnixTimestamp::now(),
     );
 
     // Package digest mismatch (randomness_value changed → package_digest invalid)
@@ -426,7 +427,7 @@ fn phase5_check_full_rejects_tampered_hsp_proof() {
     let aux_verifier = AuxiliaryVerifier::new(vids[0].clone(), policy);
     let result = aux_verifier.check_full(
         &package, &statement, &dctls_evidence, &dvrf_output, &alpha,
-        &server_cert_hash, b"GET /", b"OK", UnixTimestamp(1_001_000),
+        &server_cert_hash, b"GET /", b"OK", UnixTimestamp::now(),
     );
     assert!(!result.approved, "Tampered HSP proof must be rejected by check_full");
     let reason = result.failure_reason.unwrap();
@@ -471,7 +472,7 @@ fn phase5_check_full_rejects_wrong_response_in_qp() {
     let result = aux_verifier.check_full(
         &package, &statement, &dctls_evidence, &dvrf_output, &alpha,
         &server_cert_hash, b"GET /", b"500 Error", // Wrong response
-        UnixTimestamp(1_001_000),
+        UnixTimestamp::now(),
     );
     assert!(!result.approved, "Wrong response in QP must be rejected");
     let reason = result.failure_reason.unwrap();
@@ -519,7 +520,7 @@ fn phase6_multiple_aux_verifiers_all_approve_valid_pipeline() {
         let result = aux.check_full(
             &package, &statement, &dctls_evidence, &dvrf_output, &alpha,
             &server_cert_hash, b"GET /balance", b"1000",
-            UnixTimestamp(1_001_000),
+            UnixTimestamp::now(),
         );
         result.approved
     }).count();
